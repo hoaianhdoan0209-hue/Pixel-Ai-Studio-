@@ -1,5 +1,5 @@
 # Pixel AI Studio
 
-Android pixel office with seven AI roles, offline project storage and Minecraft Bedrock Add-On export.
+Ứng dụng Android văn phòng pixel với 7 vai trò AI, lưu dự án offline và xuất Add-On Minecraft Bedrock.
 
-See README_VI.md for Vietnamese setup and build instructions.
+Xem [hướng dẫn tiếng Việt](README_VI.md). Tải APK tại tab Actions → Build Android APK → Artifacts.
