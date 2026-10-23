@@ -2,7 +2,7 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    paths: ['app/**', '*.gradle', 'gradle.properties', '.github/workflows/android-apk.yml']
+    paths: ['app/**', 'tests.mjs', '*.gradle', 'gradle.properties', '.github/workflows/android-apk.yml']
 permissions:
   contents: read
 jobs:

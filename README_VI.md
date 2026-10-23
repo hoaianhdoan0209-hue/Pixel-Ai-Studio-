@@ -61,3 +61,9 @@ node tests.mjs
 - https://developer.android.com/build/releases/agp-8-9-0-release-notes
 - https://developer.android.com/develop/ui/views/layout/webapps/load-local-content
 Font Pixel Workshop dẫn xuất raster từ DejaVu Sans Mono, xem app/src/main/assets/FONT_LICENSE.txt.
+
+
+## Tích hợp danh mục Public APIs
+Tab **Kho API** đóng gói 5 ví dụ để tra cứu offline. Bấm **Cập nhật từ GitHub** để đọc danh mục trong https://github.com/public-apis/public-apis và lưu chỉ mục vào localStorage để tìm kiếm offline. Danh mục này do cộng đồng biên soạn; một mục có thể đã ngừng hoạt động, cần API key hoặc yêu cầu phí.
+
+Chỉ năm điểm GET mẫu được Android cho phép gọi: PokéAPI, Open-Meteo, Open Library, JSONPlaceholder, GitHub REST. Android hạn chế URL HTTPS chính xác, không theo redirect, giới hạn phản hồi 1 MiB, không gửi khóa AI sang API công khai. Bấm **Thử GET mẫu** rồi **Đưa kết quả vào yêu cầu** để thêm dữ liệu cắt ngắn vào ô Giao việc. Những API khác chỉ chèn tên, mô tả, tài liệu để tham khảo, không tự gọi. Đội AI chỉ nhận dữ liệu khi người dùng bấm GIAO VIỆC. Ngoại tuyến vẫn có thể xem danh mục đã lưu; gọi API/cập nhật danh mục cần mạng. Open-Meteo dùng tọa độ mẫu cố định ở Hà Nội, không đọc vị trí thiết bị.
