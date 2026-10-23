@@ -20,6 +20,7 @@ public class MainActivity extends Activity {
     private WebView web;
     private final ExecutorService workers = Executors.newFixedThreadPool(5);
     private byte[] pendingExport;
+    private String pendingFilename;
     private static final String ORIGIN = "https://appassets.androidplatform.net/";
     // Exact HTTPS allowlist: no arbitrary URL proxy, no API keys or redirects.
     private static final java.util.Set<String> PUBLIC_URLS = new java.util.HashSet<>(java.util.Arrays.asList(
@@ -66,6 +67,42 @@ public class MainActivity extends Activity {
     private JSONObject error(String text) {
         JSONObject j=new JSONObject();try{j.put("ok",false);j.put("error",text);}catch(JSONException ignored){}return j;
     }
+
+    private byte[] zipPack(JSONObject files,String root)throws IOException,JSONException{
+        if(!"BP".equals(root)&&!"RP".equals(root))throw new IOException("Pack phải là BP hoặc RP");
+        if(!files.has(root+"/manifest.json"))throw new IOException("Thiếu "+root+"/manifest.json");
+        ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+        try(ZipOutputStream out=new ZipOutputStream(bytes)){
+            java.util.Iterator<String> keys=files.keys();int count=0;int total=0;
+            while(keys.hasNext()){
+                String full=keys.next();
+                if(!full.startsWith(root+"/"))continue;
+                String relative=full.substring(3);
+                if(!relative.matches("[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*\\.(?:json|js|txt|lang|mcfunction)"))
+                    throw new IOException("Đường dẫn không hợp lệ: "+full);
+                if(++count>2000)throw new IOException("Số file trong pack vượt giới hạn");
+                byte[] content=files.getString(full).getBytes(StandardCharsets.UTF_8);
+                if(content.length>512*1024)throw new IOException("File văn bản quá lớn: "+full);
+                total+=content.length;
+                if(total>8*1024*1024)throw new IOException("Pack quá lớn");
+                out.putNextEntry(new ZipEntry(relative));out.write(content);out.closeEntry();
+            }
+        }
+        return bytes.toByteArray();
+    }
+    private void offerSave(byte[] bytes,String displayName){
+        runOnUiThread(()->{
+            if(pendingExport!=null){Toast.makeText(this,"Đang chờ lưu tệp khác",Toast.LENGTH_SHORT).show();return;}
+            String safe=displayName.replaceAll("[^A-Za-z0-9._-]","_");
+            pendingFilename=safe;pendingExport=bytes;
+            Intent save=new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            save.addCategory(Intent.CATEGORY_OPENABLE);save.setType("application/octet-stream");
+            save.putExtra(Intent.EXTRA_TITLE,safe);
+            try{startActivityForResult(save,41);}
+            catch(Exception e){pendingExport=null;pendingFilename=null;Toast.makeText(this,"Không mở được nơi lưu: "+e.getMessage(),Toast.LENGTH_LONG).show();}
+        });
+    }
+
     public class Bridge {
         @JavascriptInterface public boolean online(){
             ConnectivityManager cm=(ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);
@@ -124,35 +161,30 @@ public class MainActivity extends Activity {
                 finally{if(connection!=null)connection.disconnect();}
             });
         }
+
         @JavascriptInterface public void exportAddon(String filesJson,String name){
-            workers.execute(() -> {
-                try {
+            workers.execute(()->{
+                try{
                     JSONObject files=new JSONObject(filesJson);
-                    ByteArrayOutputStream output=new ByteArrayOutputStream();
-                    try(ZipOutputStream outer=new ZipOutputStream(output)){
-                        for(String root:new String[]{"BP","RP"}){
-                            ByteArrayOutputStream innerBytes=new ByteArrayOutputStream();
-                            try(ZipOutputStream inner=new ZipOutputStream(innerBytes)){
-                                java.util.Iterator<String> keys=files.keys();int count=0;
-                                while(keys.hasNext()){
-                                    String path=keys.next();if(!path.startsWith(root+"/"))continue;
-                                    if(path.contains("..")||path.contains(":")||path.contains("\\"))throw new IOException("Đường dẫn pack không hợp lệ");
-                                    if(++count>2000)throw new IOException("Quá nhiều file");
-                                    inner.putNextEntry(new ZipEntry(path.substring(3)));
-                                    inner.write(files.getString(path).getBytes(StandardCharsets.UTF_8));inner.closeEntry();
-                                }
-                            }
-                            outer.putNextEntry(new ZipEntry(root+".mcpack"));outer.write(innerBytes.toByteArray());outer.closeEntry();
+                    ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+                    try(ZipOutputStream outer=new ZipOutputStream(bytes)){
+                        for(String pack:new String[]{"BP","RP"}){
+                            byte[] inner=zipPack(files,pack);
+                            outer.putNextEntry(new ZipEntry(pack+".mcpack"));
+                            outer.write(inner);outer.closeEntry();
                         }
                     }
-                    byte[] exportBytes=output.toByteArray();
-                    runOnUiThread(() -> {
-                        if(pendingExport!=null){Toast.makeText(MainActivity.this,"Đang chờ lưu tệp trước",Toast.LENGTH_SHORT).show();return;}
-                        pendingExport=exportBytes;
-                        Intent save=new Intent(Intent.ACTION_CREATE_DOCUMENT);save.addCategory(Intent.CATEGORY_OPENABLE);save.setType("application/octet-stream");
-                        String safe=name.replaceAll("[^A-Za-z0-9_-]","_");save.putExtra(Intent.EXTRA_TITLE,safe+".mcaddon");startActivityForResult(save,41);
-                    });
-                }catch(Exception e){runOnUiThread(()->Toast.makeText(MainActivity.this,"Không đóng gói được: "+e.getMessage(),Toast.LENGTH_LONG).show());}
+                    offerSave(bytes.toByteArray(),name+".mcaddon");
+                }catch(Exception e){runOnUiThread(()->Toast.makeText(MainActivity.this,"Không tạo được .mcaddon: "+e.getMessage(),Toast.LENGTH_LONG).show());}
+            });
+        }
+        @JavascriptInterface public void exportPack(String filesJson,String name,String pack){
+            workers.execute(()->{
+                try{
+                    JSONObject files=new JSONObject(filesJson);
+                    byte[] bytes=zipPack(files,pack);
+                    offerSave(bytes,name+"_"+pack+".mcpack");
+                }catch(Exception e){runOnUiThread(()->Toast.makeText(MainActivity.this,"Không tạo được pack: "+e.getMessage(),Toast.LENGTH_LONG).show());}
             });
         }
     }
@@ -166,11 +198,12 @@ public class MainActivity extends Activity {
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);
         if(request==41){byte[] bytes=pendingExport;pendingExport=null;
+            String filename=pendingFilename;pendingFilename=null;
             if(result==RESULT_OK&&data!=null&&data.getData()!=null&&bytes!=null){
                 Uri destination=data.getData();workers.execute(()->{
                     try(OutputStream out=getContentResolver().openOutputStream(destination)){
                         if(out==null)throw new IOException("Không mở được nơi lưu");out.write(bytes);
-                        runOnUiThread(()->Toast.makeText(this,"Đã lưu .mcaddon — cần nhập và thử trong Minecraft",Toast.LENGTH_LONG).show());
+                        runOnUiThread(()->Toast.makeText(this,"Đã lưu "+filename+" — hãy nhập và thử trong Minecraft",Toast.LENGTH_LONG).show());
                     }catch(IOException e){runOnUiThread(()->Toast.makeText(this,"Lưu tệp thất bại",Toast.LENGTH_LONG).show());}
                 });
             }
