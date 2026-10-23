@@ -45,5 +45,30 @@ ready(now=Date.now(),config=null){const active=this.jobs.flatMap(j=>j.nodes.filt
 async runOne(work,transport,profiles){const {job,node}=work;node.status='running';this.changed();try{const text=await transport(job.config,messages(job,node,profiles));if(typeof text!=='string'||!text.trim())throw Error('AI không trả nội dung.');node.text=text;node.status='done';node.error='';node.attempt=0;}catch(e){node.attempt++;node.error=e.message||String(e);if(e.retry){node.status='waiting';const delay=Math.max(e.delay||0,Math.min(3600000,30000*2**Math.min(node.attempt-1,7)));node.due=Date.now()+delay;this.cooldown=Math.max(this.cooldown,node.due);if(e.status===429)this.limit=Math.max(1,this.limit-1);}else node.status='failed';}this.changed();}
 retry(job){for(const n of job.nodes)if(['failed','waiting','interrupted'].includes(n.status)){n.status='queued';n.due=0;n.error='';}job.cancelled=false;this.paused=false;this.changed();}
 }
-const api={ROLES,uid,normalize,graph,makeJob,ancestors,filesFrom,platform,messages,recover,validateAddon,Scheduler};if(typeof module!=='undefined')module.exports=api;else root.StudioCore=api;
+
+function safePackPath(path){
+ return typeof path==='string'&&path.length<=180
+   &&/^(BP|RP)\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*\.(?:json|js|mcfunction|lang|txt)$/.test(path);
+}
+function createPackPair(name,providedUuids=null){
+ name=String(name||'').trim().slice(0,80)||'Studio Add-On';
+ const uuids=providedUuids||[uid(),uid(),uid(),uid()];
+ if(!Array.isArray(uuids)||uuids.length!==4||new Set(uuids).size!==4||uuids.some(x=>!(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(x))))
+   throw Error('Không đủ bốn UUID hợp lệ, khác nhau cho BP/RP.');
+ const [bp,bm,rp,rm]=uuids;
+ function manifest(label,description,headerId,moduleId,type){
+   return {format_version:2,
+     header:{name:name+' - '+label,description,uuid:headerId,version:[1,0,0],min_engine_version:[1,26,0]},
+     modules:[{type,uuid:moduleId,version:[1,0,0]}]};
+ }
+ const bpManifest=manifest('BP','Behavior Pack '+name,bp,bm,'data');
+ bpManifest.dependencies=[{uuid:rp,version:[1,0,0]}];
+ const rpManifest=manifest('RP','Resource Pack '+name,rp,rm,'resources');
+ return {id:uid(),name,files:{
+   'BP/manifest.json':JSON.stringify(bpManifest,null,2)+'\n',
+   'RP/manifest.json':JSON.stringify(rpManifest,null,2)+'\n'
+ }};
+}
+
+const api={ROLES,uid,normalize,graph,makeJob,ancestors,filesFrom,platform,messages,recover,validateAddon,safePackPath,createPackPair,Scheduler};if(typeof module!=='undefined')module.exports=api;else root.StudioCore=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
