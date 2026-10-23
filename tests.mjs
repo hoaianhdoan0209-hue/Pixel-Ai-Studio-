@@ -26,4 +26,31 @@ await test('Public APIs parser, catalog and bounded sample attachments',()=>{
  assert.ok(P.apiAttachment(P.samples[0],JSON.stringify({text:'x'.repeat(3000)})).includes('[ĐÃ CẮT BỚT]'));
  assert.throws(()=>P.apiAttachment({id:'untrusted',url:'https://example.test'},'{}'));
 });
+
+await test('create BP and RP without AI or API key',()=>{
+ const pack=C.createPackPair('Kiểm thử');
+ assert.deepEqual(Object.keys(pack.files).sort(),['BP/manifest.json','RP/manifest.json']);
+ assert.deepEqual(C.validateAddon(pack.files),[]);
+ const bp=JSON.parse(pack.files['BP/manifest.json']),rp=JSON.parse(pack.files['RP/manifest.json']);
+ assert.equal(bp.modules[0].type,'data');
+ assert.equal(rp.modules[0].type,'resources');
+ assert.equal(bp.dependencies[0].uuid,rp.header.uuid);
+ assert.equal(bp.header.name,'Kiểm thử - BP');
+ assert.deepEqual(bp.header.min_engine_version,[1,26,0]);
+ assert.equal(new Set([bp.header.uuid,bp.modules[0].uuid,rp.header.uuid,rp.modules[0].uuid]).size,4);
+});
+await test('safe BP and RP paths prevent escape and unsupported binary files',()=>{
+ for(const path of ['BP/manifest.json','BP/recipes/crafting.json','RP/texts/en_US.lang','RP/functions/start.mcfunction'])
+   assert.equal(C.safePackPath(path),true,path);
+ for(const path of ['../manifest.json','BP/../manifest.json','RP//manifest.json','BP/manifest.png','BP/foo.json/../bad.json','assets/x.json'])
+   assert.equal(C.safePackPath(path),false,path);
+});
+await test('invalid BP RP UUID or dependency fails validation',()=>{
+ const p=C.createPackPair('Check'),bp=JSON.parse(p.files['BP/manifest.json']);
+ bp.dependencies[0].uuid='00000000-0000-4000-8000-000000000000';
+ p.files['BP/manifest.json']=JSON.stringify(bp);
+ assert.ok(C.validateAddon(p.files).some(e=>e.includes('dependency')));
+ assert.throws(()=>C.createPackPair('Wrong',['abc','def','ghi','jkl']));
+});
+
 console.log(`${count} checks passed`);
