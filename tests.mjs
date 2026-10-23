@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url),C=require('./app/src/main/assets/core.js');
+const P=require('./app/src/main/assets/public-apis.js');
 let count=0;async function test(name,fn){await fn();count++;console.log('OK',name);}
 const config={endpoint:'https://example.test/v1',model:'demo'};
 await test('normalization and HTTPS',()=>{assert.equal(C.normalize('https://generativelanguage.googleapis.com','models/demo').model,'demo');assert.equal(C.normalize('https://example.test/v1/chat/completions/','x').endpoint,'https://example.test/v1');assert.throws(()=>C.normalize('http://example.test','x'));});
@@ -16,4 +17,13 @@ await test('valid base addon structures',()=>assert.deepEqual(C.validateAddon(fi
 await test('invalid and incomplete manifests are reported without crashing',()=>{assert.ok(C.validateAddon({'BP/manifest.json':'null','RP/manifest.json':'[]'}).length);assert.ok(C.validateAddon({'BP/manifest.json':'{}','RP/manifest.json':'{}'}).length);});
 await test('duplicate UUID prevents packaging',()=>{const j=C.makeJob('X','B','bedrock',config),f=files(j),m=JSON.parse(f['BP/manifest.json']);m.modules[0].uuid=m.header.uuid;f['BP/manifest.json']=JSON.stringify(m);assert.ok(C.validateAddon(f).some(e=>e.includes('trùng')));});
 await test('Bedrock prompt overrides HTML and Java mod assumptions',()=>{const j=C.makeJob('X','B','bedrock',config),text=C.messages(j,j.nodes[0])[0].content;assert.ok(text.includes('KHÔNG làm game HTML'));assert.ok(text.includes('[1,26,0]'));assert.ok(text.includes(j.uuids[0]));});
+await test('Public APIs parser, catalog and bounded sample attachments',()=>{
+ const fixture='## Index\n### Games & Comics\n| [PokéAPI](https://pokeapi.co/) | Pokemon test | No | Yes | Yes |';
+ assert.equal(P.parseDirectory(fixture).length,1);
+ assert.equal(P.parseDirectory('no table').length,0);
+ assert.equal(P.samples.length,5);
+ assert.ok(P.samples.every(x=>x.url.startsWith('https://')));
+ assert.ok(P.apiAttachment(P.samples[0],JSON.stringify({text:'x'.repeat(3000)})).includes('[ĐÃ CẮT BỚT]'));
+ assert.throws(()=>P.apiAttachment({id:'untrusted',url:'https://example.test'},'{}'));
+});
 console.log(`${count} checks passed`);
