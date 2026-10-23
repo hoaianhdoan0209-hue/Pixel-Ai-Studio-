@@ -21,6 +21,15 @@ public class MainActivity extends Activity {
     private final ExecutorService workers = Executors.newFixedThreadPool(5);
     private byte[] pendingExport;
     private static final String ORIGIN = "https://appassets.androidplatform.net/";
+    // Exact HTTPS allowlist: no arbitrary URL proxy, no API keys or redirects.
+    private static final java.util.Set<String> PUBLIC_URLS = new java.util.HashSet<>(java.util.Arrays.asList(
+        "https://pokeapi.co/api/v2/pokemon/pikachu",
+        "https://api.open-meteo.com/v1/forecast?latitude=21.03&longitude=105.85&current=temperature_2m",
+        "https://openlibrary.org/search.json?title=minecraft&limit=2",
+        "https://jsonplaceholder.typicode.com/todos/1",
+        "https://api.github.com/repos/public-apis/public-apis",
+        "https://raw.githubusercontent.com/public-apis/public-apis/master/README.md"
+    ));
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -50,6 +59,9 @@ public class MainActivity extends Activity {
     private WebResourceResponse denied(){return new WebResourceResponse("text/plain","UTF-8",new ByteArrayInputStream(new byte[0]));}
     private void deliver(String id, JSONObject data) {
         runOnUiThread(() -> { if(!isFinishing()) web.evaluateJavascript("window.nativeResult("+JSONObject.quote(id)+","+data.toString()+")",null); });
+    }
+    private void deliverPublic(String id, JSONObject data) {
+        runOnUiThread(() -> { if(!isFinishing()) web.evaluateJavascript("window.publicApiResult("+JSONObject.quote(id)+","+data.toString()+")",null); });
     }
     private JSONObject error(String text) {
         JSONObject j=new JSONObject();try{j.put("ok",false);j.put("error",text);}catch(JSONException ignored){}return j;
@@ -85,6 +97,33 @@ public class MainActivity extends Activity {
                 finally{if(connection!=null)connection.disconnect();}
             });
         }
+        @JavascriptInterface public void publicGet(String id,String raw) {
+            workers.execute(() -> {
+                HttpURLConnection connection=null;
+                try {
+                    String target=new JSONObject(raw).getString("url");
+                    if(!PUBLIC_URLS.contains(target))throw new IOException("URL không nằm trong danh sách API cho phép.");
+                    URL url=new URL(target);
+                    if(!"https".equals(url.getProtocol())||url.getUserInfo()!=null||url.getPort()!=-1)
+                        throw new IOException("Chỉ HTTPS cố định được cho phép.");
+                    connection=(HttpURLConnection)url.openConnection();
+                    connection.setInstanceFollowRedirects(false);
+                    connection.setRequestMethod("GET");
+                    connection.setConnectTimeout(12000);
+                    connection.setReadTimeout(20000);
+                    connection.setRequestProperty("Accept","application/json, text/plain");
+                    connection.setRequestProperty("User-Agent","PixelAIStudio/0.1");
+                    int status=connection.getResponseCode();
+                    InputStream stream=status>=400?connection.getErrorStream():connection.getInputStream();
+                    JSONObject reply=new JSONObject();
+                    reply.put("ok",status>=200&&status<300);
+                    reply.put("status",status);
+                    reply.put("body",readBounded(stream,1024*1024));
+                    deliverPublic(id,reply);
+                }catch(Exception e){deliverPublic(id,error(e.getMessage()==null?"Lỗi kết nối":e.getMessage()));}
+                finally{if(connection!=null)connection.disconnect();}
+            });
+        }
         @JavascriptInterface public void exportAddon(String filesJson,String name){
             workers.execute(() -> {
                 try {
@@ -117,10 +156,11 @@ public class MainActivity extends Activity {
             });
         }
     }
-    private String readBounded(InputStream stream)throws IOException{
+    private String readBounded(InputStream stream)throws IOException{return readBounded(stream,8*1024*1024);}
+    private String readBounded(InputStream stream,int limit)throws IOException{
         if(stream==null)return "";
         try(InputStream in=stream;ByteArrayOutputStream out=new ByteArrayOutputStream()){
-            byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1){if(out.size()+n>8*1024*1024)throw new IOException("Phản hồi vượt 8 MiB");out.write(buffer,0,n);}return out.toString("UTF-8");
+            byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1){if(out.size()+n>limit)throw new IOException("Phản hồi vượt giới hạn kích thước");out.write(buffer,0,n);}return out.toString("UTF-8");
         }
     }
     @Override protected void onActivityResult(int request,int result,Intent data){
