@@ -37,6 +37,15 @@ function renderOutputs(){const keep=$('outputJob').value;$('outputJob').replaceC
 function showOutput(){const job=currentJob();$('outputList').replaceChildren();$('validation').textContent='';if(!job)return;for(const n of job.nodes.filter(n=>n.text)){const b=document.createElement('button');b.textContent=C.ROLES[n.role][0]+' / '+n.id;b.onclick=()=>{$('outputText').value=n.text;};$('outputList').append(b);}$('export').disabled=job.kind!=='bedrock';}
 $('outputJob').onchange=showOutput;
 $('export').onclick=()=>{const j=currentJob();if(!j)return;if(j.kind!=='bedrock')return notice('Chỉ Add-On Bedrock xuất .mcaddon.');const integration=j.nodes.find(n=>n.id==='integrate');if(integration.status!=='done')return notice('Chờ Nova bàn giao phần integrate.');const files=C.filesFrom(integration.text);const errors=C.validateAddon(files);$('validation').textContent=errors.length?errors.join('\n'):'Đạt kiểm tra cấu trúc cơ bản. Chưa chạy thử trong Minecraft.';if(errors.length)return;if(!window.NativeStudio)return notice('Lưu tệp cần bản APK Android.');NativeStudio.exportAddon(JSON.stringify(files),j.name);};
+window.StudioGetSelectedAddon=function(){
+ const job=currentJob();
+ if(!job||job.kind!=='bedrock')throw Error('Chọn dự án Minecraft Bedrock trong phần Đầu ra AI.');
+ const node=job.nodes.find(n=>n.id==='integrate');
+ if(!node||node.status!=='done')throw Error('Nova chưa tạo file tích hợp. Có thể bấm TẠO BP + RP để khởi đầu thủ công.');
+ const files=C.filesFrom(node.text);
+ if(!Object.keys(files).length)throw Error('Phản hồi tích hợp chưa có khối file:BP/... hoặc file:RP/...');
+ return {name:job.name,uuids:job.uuids,files};
+};
 // All scenery and characters are local code-native pixel art.
 const canvas=$('world'),ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;
 function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),w,h);}
