@@ -1,0 +1,58 @@
+name: Pixel AI World quality
+on:
+  push:
+    paths: ['web/**', '.github/workflows/web-quality.yml']
+  pull_request:
+    paths: ['web/**', '.github/workflows/web-quality.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci --no-audit --no-fund
+      - run: docker pull node:24-bookworm-slim
+      - run: python3 -m pip install playwright==1.62.0
+      - run: python3 -m playwright install --with-deps chromium
+      - name: Locate browser for backend isolation tests
+        run: |
+          python3 - <<'PY'
+          import os
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              with open(os.environ['GITHUB_ENV'], 'a') as output:
+                  output.write('CHROMIUM_EXECUTABLE=' + p.chromium.executable_path + '\n')
+          PY
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --audit-level=high
+      - name: Video test fixture encoder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Browser phase gates
+        env:
+          BUILD_RUNNER_ENABLED: 'true'
+        run: |
+          python3 scripts/e2e.py
+          python3 e2e/tool_workflow.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pixel-world-browser-evidence
+          path: web/.e2e-artifacts
+          if-no-files-found: ignore

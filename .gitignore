@@ -1,0 +1,21 @@
+# Android generated outputs and local setup
+.gradle/
+**/build/
+local.properties
+*.jks
+*.keystore
+
+# Web dependencies, generated bundles, and private local state
+web/node_modules/
+web/dist/
+web/var/
+web/.e2e-artifacts/
+.env
+.env.*
+!.env.example
+!web/.env.example
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.log
+__pycache__/

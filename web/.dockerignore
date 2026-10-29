@@ -1,0 +1,9 @@
+node_modules
+dist
+var
+.env
+.env.*
+*.sqlite*
+*.log
+.e2e-artifacts
+__pycache__

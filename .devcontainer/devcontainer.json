@@ -1,0 +1,14 @@
+{
+  "name": "Pixel AI World Studio",
+  "image": "node:24-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [3001],
+  "portsAttributes": {
+    "3001": { "label": "Pixel AI World", "onAutoForward": "openBrowser", "protocol": "http" }
+  },
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/start.sh",
+  "remoteUser": "node"
+}

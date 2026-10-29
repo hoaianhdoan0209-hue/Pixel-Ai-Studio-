@@ -1,0 +1,18 @@
+# Dùng Pixel AI World trên GitHub
+
+GitHub Codespaces chạy cả website, API và SQLite trong môi trường phát triển riêng của bạn. GitHub Pages chỉ phục vụ tệp tĩnh nên không chạy được đầy đủ tài khoản, cộng đồng và dự án của ứng dụng này. Codespaces chưa phải hosting production; thời gian sử dụng và dung lượng tuân theo hạn mức/gói GitHub của tài khoản.
+
+1. Mở nhánh `codex/pixel-ai-world-studio` trong repository.
+2. Chọn **Code → Codespaces → Create codespace on codex/pixel-ai-world-studio**. Giữ cấu hình `.devcontainer` của repository.
+3. Đợi cài dependency, build website và tải image runner. Sau khi hoàn tất, trang Pixel AI World tự mở. Nếu chưa mở, vào bảng **Ports**, tìm cổng **3001**, chọn **Open in Browser**. Giữ cổng ở chế độ **Private**.
+4. Đăng ký tài khoản → **AI Studio → Tạo yêu cầu game**. Chọn dự án và một trong tám bàn AI để soạn yêu cầu. Dữ liệu được lưu thật ở `web/var`; dừng rồi mở lại cùng Codespace vẫn giữ dữ liệu. Xóa Codespace sẽ xóa dữ liệu của nó; tải backup trước khi xóa.
+
+Nếu cần khởi động lại, chạy `bash .devcontainer/start.sh`. Log nằm ở `web/var/codespace-server.log`. Để xem log: `tail -n 80 web/var/codespace-server.log`. Nếu thay đổi frontend, chạy `cd web && npm run build`.
+
+Tài khoản đầu tiên vẫn là member, không tự tăng quyền admin. Có thể dùng cộng đồng, tạo yêu cầu, dự án và task ngay. Nếu cần quản trị, làm theo bootstrap riêng trong DEPLOYMENT.md; không bật bootstrap trên một cổng công khai.
+
+AI cần `AI_API_KEY` hoặc `ANTHROPIC_API_KEY`, model được cấp quyền và ngân sách dự án. Email cần SMTP; lời mời yêu cầu xác minh email. GitHub App của ứng dụng cần cấu hình riêng, khác quyền Git của Codespace. Cấu hình giá trị riêng trong **GitHub Settings → Codespaces → Secrets**, cấp quyền repository rồi khởi động lại Codespace; không nhập key vào chat, mã nguồn hay trình duyệt của ứng dụng. Tên biến và cấu hình xem web/.env.example.
+
+Build runner dùng Docker riêng của Codespace và image Node đã tải. Hỗ trợ HTML/JS tự chứa, kiểm thử và ZIP; chưa hỗ trợ build Android/framework/desktop. Ứng dụng Android gốc được giữ nguyên; Codespace này ưu tiên website và không tự cài Android SDK.
+
+Đã kiểm tra build/script và ứng dụng trong cloud hiện tại. Chưa tạo/chạy Codespace mới trên GitHub, chưa xác nhận remote Actions hoặc website công khai; cần phân biệt các trạng thái này.
