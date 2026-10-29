@@ -145,6 +145,16 @@ try:
         role = page.get_by_label('Vai trò AI')
         expect(role.locator('option')).to_have_count(8)
         role.select_option('build_engineer')
+        skill_panel = page.get_by_role('region', name='Kỹ năng từ GitHub', exact=True)
+        skill_panel.get_by_text('Thêm skill từ GitHub', exact=True).click()
+        skill_panel.get_by_label('Tên skill', exact=True).fill('Kỹ năng giao diện game')
+        skill_panel.get_by_label('Liên kết SKILL.md trên GitHub', exact=True).fill('https://github.com/example/skills/blob/main/game/SKILL.md')
+        with page.expect_response(lambda response: response.url.endswith('/skills') and response.request.method == 'POST') as imported:
+            skill_panel.get_by_role('button', name='Đọc và lưu skill', exact=True).click()
+        assert imported.value.status == 201
+        skill_id = imported.value.json()['skill']['id']
+        expect(skill_panel.get_by_text('Kỹ năng giao diện game · Đang bật', exact=True)).to_be_visible()
+
         page.get_by_label('Giới hạn tokens', exact=True).fill('1000000')
         page.get_by_label('Ngân sách ước tính USD', exact=True).fill('10')
         page.get_by_label('Output tối đa mỗi lượt', exact=True).fill('256')
@@ -162,6 +172,8 @@ try:
         job = wait_job(owner_context, project_id)
         assert job['status'] == 'waiting_approval', job.get('errorMessage')
         assert job['agent'] == 'build_engineer' and job['toolsEnabled'] is True
+        assert len(job['skills']) == 1 and job['skills'][0]['id'] == skill_id
+        expect(page.get_by_text('Skill đã dùng · 1', exact=True)).to_be_visible()
         response, detail = api(owner_context, '/ai/jobs/' + job['id'])
         assert response.ok
         assert {call['name'] for call in detail['toolCalls']} == {'read_project', 'read_tasks', 'request_build'}

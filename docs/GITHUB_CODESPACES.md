@@ -30,3 +30,9 @@ Bản sửa đã chạy thử startup mới và startup lặp lại ở cổng31
 Trong terminal ở gốc repository chạy `git pull --ff-only`, sau đó `npm --prefix web run build`; tải lại trang để nhận giao diện mới. Vào AI Studio → Tạo yêu cầu game, điền tên, mô tả, tính năng và điều kiện nghiệm thu bằng tiếng Việt. Sau khi lưu, chọn dự án/bàn AI và soạn yêu cầu. Nút Điền mẫu tiếng Việt có mẫu theo vai trò; chỉ dùng khi ô yêu cầu còn trống. Chọn mô hình được API cấp quyền, lưu ngân sách rồi chủ động gửi tác vụ. Nếu chưa có bảng giá, quản trị viên cần cấu hình tại Mức sử dụng.
 
 Các thẻ Trợ lý AI/Kết nối mã nguồn GitHub/Máy dựng game là trạng thái dịch vụ. Hướng dẫn nhập khóa nằm trong mục Chưa biết nhập khóa AI ở đâu? ở cuối trang; khóa phải lưu trong Codespaces Secrets với tên AI_API_KEY hoặc ANTHROPIC_API_KEY, chọn đúng repository rồi dừng/mở lại Codespace. Không gửi khóa qua chat.
+
+## Dùng skill GitHub
+
+Cập nhật mã bằng git pull --ff-only và npm --prefix web run build, sau đó dừng rồi mở lại cùng Codespace để máy chủ nhận API mới và tự migrate schema10 (giữ dữ liệu trước đó). Không tạo Codespace khác để cập nhật, vì dữ liệu thuộc Codespace hiện tại. Nên tạo backup SQLite theo DEPLOYMENT.md trước nâng cấp.
+
+Vào AI Studio → chọn dự án → Kỹ năng dùng chung cho AI → Thêm skill từ GitHub. Nhập tên, dán URL của tệp SKILL.md công khai, chọn các AI cần dùng và bấm Đọc và lưu skill. Xem nội dung trước khi gửi tác vụ; skill đang bật tự đi cùng tác vụ của các vai trò đã chọn, không cần bật quyền công cụ. Có thể tắt hoặc xóa skill khỏi tác vụ mới; lịch sử tác vụ cũ giữ bản đã dùng.

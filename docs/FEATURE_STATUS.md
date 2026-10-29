@@ -49,3 +49,7 @@ Xem [TEST_REPORT.md](TEST_REPORT.md) và [PHASE_GATES.md](PHASE_GATES.md) để 
 Source Android không thay đổi trong các phase web. Baseline Android đã qua 15 core checks, 10 offline browser checks, APK build/signature và lint không lỗi (hai warning); chưa chạy thiết bị/Minecraft.
 
 Xưởng Studio mới đã có gate trình duyệt7/7 với dữ liệu thật: tạo yêu cầu→project/task, tám vai trò đồng bộ hai chiều, draft theo project, chuyển planning/tasks/source/build đúng đích qua reload, viewer bị giới hạn và390px. Full suite sau cập nhật vẫn174/174; tổng sáu gate52 + tool5 =57 browser checks. Xem đầu TEST_REPORT cho log mới; số45/50 ở phần lịch sử thuộc bản trước thay đổi Studio.
+
+## Skill GitHub dùng chung trong dự án
+
+AI Studio → chọn dự án → Kỹ năng dùng chung cho AI → Thêm skill từ GitHub. Nhập tên và link đến tệp SKILL.md công khai, chọn các vai trò (mặc định cả tám) và lưu. Chủ dự án đang mở khóa được thêm/bật/tắt/xóa/phân vai; role có quyền source được xem nội dung. Tác vụ mới đính kèm snapshot skill đang bật của vai trò, ngân sách gồm nội dung tham khảo; tác vụ cũ giữ hash/version/nội dung đã dùng. Không tự tải scripts, cài dependency hoặc tăng quyền công cụ theo skill. Nhận GitHub blob/raw đến SKILL.md; tối đa10 skill/project,16KiB/skill,48KiB snapshot mỗi tác vụ. Chưa hỗ trợ private repo hoặc tự đọc các tệp phụ được SKILL.md tham chiếu.

@@ -4,7 +4,7 @@ Website dùng SQLite thực tại DATA_DIR/pixel-world.sqlite, tách khỏi Andr
 
 ## Migration
 
-server/db.ts bật foreign keys, WAL và busy_timeout=5000. Migration 001 khởi tạo idempotent; các file NNN_name.sql tiếp theo được sắp theo version và chỉ áp dụng khi chưa có trong schema_migrations, mỗi file trong transaction. Mã hiện có migration đến schema 9; trạng thái runtime đã migrate phải được xác nhận bằng health/DB của instance, không suy từ file migration. Thay đổi tiếp theo phải thêm migration; không sửa file đã áp dụng để thay thế migrate dữ liệu.
+server/db.ts bật foreign keys, WAL và busy_timeout=5000. Migration 001 khởi tạo idempotent; các file NNN_name.sql tiếp theo được sắp theo version và chỉ áp dụng khi chưa có trong schema_migrations, mỗi file trong transaction. Mã hiện có migration đến schema 10; trạng thái runtime đã migrate phải được xác nhận bằng health/DB của instance, không suy từ file migration. Thay đổi tiếp theo phải thêm migration; không sửa file đã áp dụng để thay thế migrate dữ liệu.
 
 | Version | Schema |
 |---|---|
@@ -17,6 +17,7 @@ server/db.ts bật foreign keys, WAL và busy_timeout=5000. Migration 001 khởi
 | 007 | GitHub connection/repository/proposal/webhook; build job và release. |
 | 008 | `ai_jobs.agent_role`/`tools_enabled`, cấu hình năm role mở rộng, tool calls và immutable tool proposals có hash/version/trạng thái. |
 | 009 | `source_workspaces`; liên kết proposal đến workspace/base commit/validation build/hash; idempotency action ID cho bridge AI→proposal/build. |
+| 010 | `project_ai_skills` lưu Markdown/hash/phân vai/version và `ai_jobs.skills_json` giữ snapshot skill đã dùng; dữ liệu cũ có danh sách skill rỗng. |
 
 Migration 005 dựng lại membership/invitation có kiểm soát để thêm tester/reviewer và giữ dữ liệu cũ. Test migration dùng DB v2 có member/invitation/task assignee, kiểm tra foreign keys và mở lại idempotent.
 

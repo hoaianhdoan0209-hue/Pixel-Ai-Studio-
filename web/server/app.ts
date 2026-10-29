@@ -12,6 +12,7 @@ import { registerProjects, duplicateProjectPlanning } from './projects.js';
 import { registerAI, type AIOptions } from './ai.js';
 import { registerIntegrations, type IntegrationOptions } from './integrations.js';
 import { registerPreview, type PreviewOptions } from './preview.js';
+import { registerSkills, type SkillOptions } from './skills.js';
 
 type Row = Record<string, any>;
 const now = () => new Date().toISOString();
@@ -40,7 +41,7 @@ const postSchema = z.object({ title: name, description: text.min(1), genre: shor
 const taskSchema = z.object({title: name, description: text.optional(), type: z.enum(['task', 'bug', 'request']).optional(), priority: z.enum(['low', 'normal', 'high']).optional(), assigneeId: z.string().uuid().nullable().optional(), dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional()});
 class ApiError extends HttpError {}
 
-export function createApp(options: { dataDir: string; allowFirstAdmin?: boolean; publicOrigin?: string; identity?: IdentityOptions; ai?: AIOptions; integrations?: IntegrationOptions; preview?: PreviewOptions } ) {
+export function createApp(options: { dataDir: string; allowFirstAdmin?: boolean; publicOrigin?: string; identity?: IdentityOptions; ai?: AIOptions; integrations?: IntegrationOptions; preview?: PreviewOptions; skills?: SkillOptions } ) {
   const db = openDatabase(options.dataDir);
   const app = express();
   app.disable('x-powered-by');
@@ -275,6 +276,7 @@ export function createApp(options: { dataDir: string; allowFirstAdmin?: boolean;
   const identity = registerIdentity(context, {...options.identity, publicOrigin: options.identity?.publicOrigin || options.publicOrigin});
   registerCommunity(context);
   const closeProjects = registerProjects(context);
+  registerSkills(context,options.skills);
   const ai = registerAI(context,{
     ...options.ai,
     executeApprovedAction: options.ai?.executeApprovedAction || (async (action, actorId) =>

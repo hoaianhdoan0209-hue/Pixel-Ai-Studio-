@@ -3,6 +3,7 @@ import type { Response } from 'express';
 import { z } from 'zod';
 import { HttpError, type ModuleContext, type Row } from './context.js';
 import { projectPermissions } from './projects.js';
+import { skillSnapshots, skillContext, type SkillSnapshot } from './skills.js';
 import { createOpenAIProvider, createAnthropicProvider, ProviderError, type AIProvider, type ProviderName, type ProviderResult, type ProviderMessage } from './ai-providers.js';
 
 import { AI_ROLES, AI_TOOLS, MAX_TOOL_TURNS, MAX_TOOL_RESULT_BYTES, MAX_ASSISTANT_BYTES, createToolRuntime, type ApprovedAIAction } from './ai-tools.js';
@@ -67,7 +68,7 @@ export function registerAI(ctx: ModuleContext, options: AIOptions = {}) {
     if (!projectPermissions(project.role,!!project.locked).viewSource) throw new HttpError(404, 'Tác vụ không tồn tại hoặc vai trò không có quyền xem mã nguồn.');
     return { job, project };
   };
-  const jobShape = (job: Row) => ({ id: job.id, projectId: job.project_id, requestId: job.request_id, agent: effectiveRole(job), toolsEnabled: !!job.tools_enabled, planApproved: !!one('SELECT 1 FROM ai_plan_tasks WHERE job_id=?',job.id), provider: job.provider, model: job.model, status: job.status, output: job.output, plan: job.plan_json ? JSON.parse(job.plan_json) : null, attempts: job.attempts, errorCode: job.error_code, errorMessage: job.error_message, reservedTokens: job.reserved_tokens, reservedCostUsd: job.reserved_cost_usd, createdAt: job.created_at, updatedAt: job.updated_at, version: job.version });
+  const jobShape = (job: Row) => ({ id: job.id, projectId: job.project_id, requestId: job.request_id, agent: effectiveRole(job), toolsEnabled: !!job.tools_enabled, skills: (JSON.parse(job.skills_json || '[]') as SkillSnapshot[]).map(({content,...metadata})=>metadata), planApproved: !!one('SELECT 1 FROM ai_plan_tasks WHERE job_id=?',job.id), provider: job.provider, model: job.model, status: job.status, output: job.output, plan: job.plan_json ? JSON.parse(job.plan_json) : null, attempts: job.attempts, errorCode: job.error_code, errorMessage: job.error_message, reservedTokens: job.reserved_tokens, reservedCostUsd: job.reserved_cost_usd, createdAt: job.created_at, updatedAt: job.updated_at, version: job.version });
   const pricingShape = (price: Row) => ({ id: price.id, provider: price.provider, model: price.model, inputUsdPerMillion: price.input_usd_per_million, outputUsdPerMillion: price.output_usd_per_million, effectiveAt: price.effective_at });
   const policyShape = (policy: Row) => ({ projectId: policy.project_id, version: policy.version, tokenLimit: policy.token_limit, costLimitUsd: policy.cost_limit_usd, jobLimit: policy.job_limit, maxConcurrent: policy.max_concurrent, maxOutputTokens: policy.max_output_tokens, reservedTokens: policy.reserved_tokens, spentTokens: policy.spent_tokens, reservedCostUsd: policy.reserved_cost_usd, spentCostUsd: policy.spent_cost_usd, jobCount: one('SELECT COUNT(*) AS n FROM ai_jobs WHERE project_id=?', policy.project_id)!.n });
 
@@ -137,8 +138,10 @@ export function registerAI(ctx: ModuleContext, options: AIOptions = {}) {
     const policy = one('SELECT * FROM ai_budget_policies WHERE project_id=?', projectId);
     if (!policy) throw new HttpError(409, 'Chủ dự án cần đặt giới hạn ngân sách trước khi chạy AI.', 'BUDGET_REQUIRED');
     const toolSystem = data.toolsEnabled ? '\nCông cụ đọc chỉ lấy dữ liệu của dự án hiện tại. Tất cả đề xuất thay đổi mã hoặc build cần chủ dự án duyệt và chưa được thực hiện khi bạn đề xuất. Không đưa bí mật vào tham số. Tối đa hai tool calls mỗi lượt và ba lượt provider; lượt cuối phải trả nội dung cuối cùng.' : '';
+    const appliedSkills = skillSnapshots(ctx,projectId,data.agent);
+    const contextText = skillContext(appliedSkills);
     const systemPrompt = systems[data.agent] + toolSystem;
-    const baseInput = Buffer.byteLength(data.prompt + systemPrompt + (data.toolsEnabled?JSON.stringify(AI_TOOLS):''), 'utf8') + 512;
+    const baseInput = Buffer.byteLength(data.prompt + systemPrompt + contextText + (data.toolsEnabled?JSON.stringify(AI_TOOLS):''), 'utf8') + 512;
     // UTF-8 bytes conservatively upper-bound input tokens. Include every prior
     // assistant/tool message when reserving the complete bounded tool exchange.
     const turns = data.toolsEnabled ? MAX_TOOL_TURNS : 1;
@@ -153,7 +156,9 @@ export function registerAI(ctx: ModuleContext, options: AIOptions = {}) {
       if (count >= current.job_limit || current.spent_tokens + current.reserved_tokens + reservedTokens > current.token_limit || current.spent_cost_usd + current.reserved_cost_usd + reservedCost > current.cost_limit_usd + 1e-10) throw new HttpError(409, 'Ngân sách không đủ cho dự trù của tác vụ và các lượt đang chạy.', 'BUDGET_EXCEEDED');
       run('UPDATE ai_budget_policies SET reserved_tokens=reserved_tokens+?,reserved_cost_usd=reserved_cost_usd+?,updated_at=? WHERE project_id=?', reservedTokens, reservedCost, iso(), projectId);
       run("INSERT INTO ai_jobs(id,project_id,request_id,user_id,agent,provider,model,prompt,system_prompt,idempotency_key,status,reserved_tokens,reserved_cost_usd,max_output_tokens,input_rate,output_rate,created_at,updated_at,agent_role,tools_enabled) VALUES(?,?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?,?)", jobId, projectId, data.requestId || null, uid(res), legacyRole(data.agent), provider, model, data.prompt, systemPrompt, data.idempotencyKey, reservedTokens, reservedCost, current.max_output_tokens, price.input_usd_per_million, price.output_usd_per_million, iso(), iso(), data.agent, data.toolsEnabled?1:0);
+      run('UPDATE ai_jobs SET skills_json=? WHERE id=?',JSON.stringify(appliedSkills),jobId);
       run('INSERT INTO ai_messages VALUES(?,?,?,?,?)', randomUUID(), jobId, 'system', systemPrompt, iso());
+      if(contextText)run('INSERT INTO ai_messages VALUES(?,?,?,?,?)',randomUUID(),jobId,'user',contextText,iso());
       run('INSERT INTO ai_messages VALUES(?,?,?,?,?)', randomUUID(), jobId, 'user', data.prompt, iso());
       audit(uid(res), projectId, 'ai.queued', `${data.agent}/${provider}/${model}`);
       alerts(projectId);
@@ -185,7 +190,8 @@ export function registerAI(ctx: ModuleContext, options: AIOptions = {}) {
     let totalInput = 0, totalOutput = 0, reported = true, completedSteps = 0;
     let providerInFlight = false;
     try {
-      const messages: ProviderMessage[] = [{role:'system',content:job.system_prompt},{role:'user',content:job.prompt}];
+      const reference = skillContext(JSON.parse(job.skills_json || '[]'));
+      const messages: ProviderMessage[] = [{role:'system',content:job.system_prompt},...(reference?[{role:'user' as const,content:reference}]:[]),{role:'user',content:job.prompt}];
       let result: ProviderResult = {text:''};
       let final = false;
       const turns = job.tools_enabled ? MAX_TOOL_TURNS : 1;
@@ -316,7 +322,7 @@ export function registerAI(ctx: ModuleContext, options: AIOptions = {}) {
     const { job, project } = readJob(String(req.params.id), res);
     if (!['failed', 'cancelled'].includes(job.status)) throw new HttpError(409, 'Chỉ thử lại tác vụ thất bại hoặc đã hủy.');
     const data = z.object({ idempotencyKey: z.string().min(8).max(100).regex(/^[a-zA-Z0-9_-]+$/) }).parse(req.body);
-    const result = enqueue(project.id, res, { prompt: job.prompt, agent: effectiveRole(job), toolsEnabled: !!job.tools_enabled, planApproved: !!one('SELECT 1 FROM ai_plan_tasks WHERE job_id=?',job.id), provider: job.provider, model: job.model, requestId: job.request_id || undefined, idempotencyKey: data.idempotencyKey });
+    const result = enqueue(project.id, res, { prompt: job.prompt, agent: effectiveRole(job), toolsEnabled: !!job.tools_enabled, skills: (JSON.parse(job.skills_json || '[]') as SkillSnapshot[]).map(({content,...metadata})=>metadata), planApproved: !!one('SELECT 1 FROM ai_plan_tasks WHERE job_id=?',job.id), provider: job.provider, model: job.model, requestId: job.request_id || undefined, idempotencyKey: data.idempotencyKey });
     res.status(result.created ? 201 : 200).json({ job: result.job });
   }));
   app.get('/api/ai/jobs/:id/events', authenticated, route((req, res) => {

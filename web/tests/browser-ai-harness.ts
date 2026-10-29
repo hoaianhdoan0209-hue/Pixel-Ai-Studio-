@@ -30,6 +30,7 @@ const provider = createOpenAIProvider('fixture-only-never-a-live-key', (async (u
   if (url !== 'https://api.openai.com/v1/chat/completions') throw new Error('Unexpected fixture destination');
   const body = JSON.parse(String(init?.body));
   const results = body.messages.filter((message: any) => message.role === 'tool');
+  if(!body.messages.some((message:any)=>message.role==='user'&&message.content.includes('BROWSER_SKILL_REFERENCE')))throw new Error('Imported skill was not sent as reference context');
   if (!body.tools?.length) return sse([
     {choices: [{delta: {content: 'Explicit browser fixture text; no external provider was called.'}, finish_reason: 'stop'}]},
     {choices: [], usage: {prompt_tokens: 10, completion_tokens: 4}},
@@ -52,7 +53,7 @@ const provider = createOpenAIProvider('fixture-only-never-a-live-key', (async (u
     {choices: [], usage: {prompt_tokens: 17, completion_tokens: 7}},
   ]);
 }) as typeof fetch);
-const instance = createApp({dataDir, allowFirstAdmin: true, ai: {
+const instance = createApp({dataDir, allowFirstAdmin: true, skills:{fetcher:async(url,options)=>{if(url!=='https://raw.githubusercontent.com/example/skills/main/game/SKILL.md'||options?.redirect!=='error')throw new Error('Unexpected skill destination');return new Response('# Game design\nBROWSER_SKILL_REFERENCE: use small readable UI buttons.');}}, ai: {
   providers: {openai: provider, anthropic: {configured: false, generate: async () => {throw new Error('No Anthropic fixture configured');}}},
   workerEnabled: true,
 }, integrations: {runnerEnabled: true}});

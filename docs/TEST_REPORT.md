@@ -172,3 +172,11 @@ Các giới hạn production và quyền được ghi tại [SECURITY.md](SECURI
 Đã Việt hóa tên tám bàn AI, tên vai trò trong biểu mẫu/lịch sử và các thẻ kết nối chính. Chi tiết kỹ thuật được thu gọn; thêm hướng dẫn Codespaces Secrets, không có biểu mẫu nhận khóa trong trình duyệt. Mỗi vai trò có mẫu yêu cầu tiếng Việt. Mẫu chỉ điền khi ô đang trống, không tự gửi tác vụ và không ghi đè bản nháp khi đổi vai trò; đổi project xóa bản nháp như trước.
 
 Bản cập nhật giao diện chạy TypeScript/Vite build thành công; gate Studio7/7 và native-tool5/5 đạt. Studio gate bổ sung kiểm tra mẫu tiếng Việt, giữ bản nháp và hướng dẫn khóa không chứa input nhận secret. Logs: /workspace/onboarding-pixel/vietnamese-build.log, vietnamese-studio.log, vietnamese-tools.log. Provider vẫn là fixture rõ ràng; không tuyên bố AI thật đã được cấu hình hoặc trả lời tiếng Việt qua API ngoài.
+
+## Skill GitHub — schema10
+
+Full backend180/180,0 fail/skip/cancel; TypeScript/Vite build đạt. Suite mới skills.test.ts6 tests: URL cố định host/chặn SSRF và URL có credentials/query; owner/lock/privacy; giới hạn stream/HTML/404/duplicate; role scope; version conflict; idempotency/snapshot sau tắt/xóa; provider fixture nhận tài liệu đúng vai trò ở user context và ngân sách gồm skill. Logs skills-all-tests.log/skills-focused.log/skills-build.log trong /workspace/onboarding-pixel.
+
+Studio browser7/7 và native tool5/5 đạt. Native gate mới nhập skill qua biểu mẫu thật, fixture HTTPS trả SKILL.md, xác nhận snapshot ở job/UI và native provider SSE nhận marker skill ở mọi lượt trước khi owner duyệt Docker. Browser fixture không gọi AI ngoài. Log skills-studio.log/skills-tools.log.
+
+Đã nhập SKILL.md công khai thật từ anthropics/skills/main/skills/frontend-design qua endpoint ứng dụng và lưu SQLite QA:9389 byte Markdown sau trim, SHA256 c3d0d3ea592ad4f01215009a7ebcf7b7d948f568c15dd77e24ff7172c8643f2b. Đây là bằng chứng GitHub read/import thật; không phải gọi AI thật hoặc thực thi nội dung skill. QA không ghi vào runtime chính. Schema9/runtime chứng minh ở các phần cũ là lịch sử, chưa dùng để khẳng định runtime của người dùng đã nâng lên10.
