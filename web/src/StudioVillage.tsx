@@ -4,14 +4,14 @@ import { ErrorMessage, request } from './phase-ui';
 import './studio-village.css';
 
 export const STUDIO_AGENTS = [
-  { id: 'planner', name: 'Planner', title: 'Lập kế hoạch', icon: Compass, color: '#a98c54', description: 'Biến yêu cầu thành kế hoạch, nhiệm vụ và điều kiện nghiệm thu. Kế hoạch cần được duyệt trước khi áp dụng.' },
-  { id: 'game_designer', name: 'Game Designer', title: 'Thiết kế gameplay', icon: Gamepad2, color: '#9e695e', description: 'Thiết kế vòng lặp gameplay, nhân vật, nhiệm vụ, cơ chế và cân bằng cho game của bạn.' },
-  { id: 'ui_designer', name: 'UI/UX Designer', title: 'Giao diện & trải nghiệm', icon: Palette, color: '#7c849b', description: 'Phác thảo màn hình, luồng người chơi, bố cục và đặc tả tài nguyên đồ họa.' },
-  { id: 'developer', name: 'Developer', title: 'Phát triển mã nguồn', icon: Code2, color: '#658c82', description: 'Đề xuất mã nguồn theo yêu cầu. Thay đổi được lưu để chủ dự án duyệt trước khi chuyển sang mã nguồn hoặc build.' },
-  { id: 'tester', name: 'Tester', title: 'Kiểm thử game', icon: Check, color: '#79945c', description: 'Thiết kế kiểm thử và phân tích lỗi. Chỉ kết quả từ runner thật mới xác nhận mã đã chạy qua kiểm thử.' },
-  { id: 'reviewer', name: 'Reviewer', title: 'Đánh giá & nghiệm thu', icon: ShieldCheck, color: '#9a7b99', description: 'Đối chiếu sản phẩm với yêu cầu, rà soát thay đổi và ghi rõ phần còn thiếu bằng chứng.' },
-  { id: 'build_engineer', name: 'Build Engineer', title: 'Chuẩn bị bản build', icon: Wrench, color: '#a37a4f', description: 'Chuẩn bị bundle và đề xuất build. Chủ dự án duyệt trước khi runner tạo bản dựng, log và artifact.' },
-  { id: 'coordinator', name: 'Coordinator', title: 'Điều phối dự án', icon: Users, color: '#6f859e', description: 'Theo dõi nhiệm vụ, xác định việc bị chặn và đề xuất phân công cho nhóm.' },
+  { id: 'planner', name: 'Lập kế hoạch', title: 'Lập kế hoạch', icon: Compass, color: '#a98c54', description: 'Biến yêu cầu thành kế hoạch, nhiệm vụ và điều kiện nghiệm thu. Kế hoạch cần được duyệt trước khi áp dụng.' },
+  { id: 'game_designer', name: 'Thiết kế game', title: 'Cách chơi & cơ chế', icon: Gamepad2, color: '#9e695e', description: 'Thiết kế vòng lặp gameplay, nhân vật, nhiệm vụ, cơ chế và cân bằng cho game của bạn.' },
+  { id: 'ui_designer', name: 'Thiết kế giao diện', title: 'Giao diện & trải nghiệm', icon: Palette, color: '#7c849b', description: 'Phác thảo màn hình, luồng người chơi, bố cục và đặc tả tài nguyên đồ họa.' },
+  { id: 'developer', name: 'Lập trình', title: 'Phát triển mã nguồn', icon: Code2, color: '#658c82', description: 'Đề xuất mã nguồn theo yêu cầu. Thay đổi được lưu để chủ dự án duyệt trước khi chuyển sang mã nguồn hoặc build.' },
+  { id: 'tester', name: 'Kiểm thử', title: 'Kiểm thử game', icon: Check, color: '#79945c', description: 'Thiết kế kiểm thử và phân tích lỗi. Chỉ kết quả từ runner thật mới xác nhận mã đã chạy qua kiểm thử.' },
+  { id: 'reviewer', name: 'Đánh giá', title: 'Đánh giá & nghiệm thu', icon: ShieldCheck, color: '#9a7b99', description: 'Đối chiếu sản phẩm với yêu cầu, rà soát thay đổi và ghi rõ phần còn thiếu bằng chứng.' },
+  { id: 'build_engineer', name: 'Dựng bản game', title: 'Chuẩn bị bản dựng', icon: Wrench, color: '#a37a4f', description: 'Chuẩn bị bundle và đề xuất build. Chủ dự án duyệt trước khi runner tạo bản dựng, log và artifact.' },
+  { id: 'coordinator', name: 'Điều phối', title: 'Điều phối dự án', icon: Users, color: '#6f859e', description: 'Theo dõi nhiệm vụ, xác định việc bị chặn và đề xuất phân công cho nhóm.' },
 ] as const;
 
 export type StudioSelection = { projectId: string; agent: string; revision: number };

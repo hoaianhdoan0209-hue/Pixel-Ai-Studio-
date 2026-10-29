@@ -166,3 +166,9 @@ APK baseline: app/build/outputs/apk/debug/app-debug.apk, 69,525 byte; SHA-256 96
 | L — Integration Failure | Unconfigured/timeout/retry/truncated/cancel/restart fixtures và runner failure đạt; chưa thử ngắt/recovery dịch vụ ngoài đang kết nối. |
 
 Các giới hạn production và quyền được ghi tại [SECURITY.md](SECURITY.md); không tự chuyển mục chưa chạy/bị chặn thành “đạt”.
+
+## Hướng dẫn nhập tiếng Việt trong Studio
+
+Đã Việt hóa tên tám bàn AI, tên vai trò trong biểu mẫu/lịch sử và các thẻ kết nối chính. Chi tiết kỹ thuật được thu gọn; thêm hướng dẫn Codespaces Secrets, không có biểu mẫu nhận khóa trong trình duyệt. Mỗi vai trò có mẫu yêu cầu tiếng Việt. Mẫu chỉ điền khi ô đang trống, không tự gửi tác vụ và không ghi đè bản nháp khi đổi vai trò; đổi project xóa bản nháp như trước.
+
+Bản cập nhật giao diện chạy TypeScript/Vite build thành công; gate Studio7/7 và native-tool5/5 đạt. Studio gate bổ sung kiểm tra mẫu tiếng Việt, giữ bản nháp và hướng dẫn khóa không chứa input nhận secret. Logs: /workspace/onboarding-pixel/vietnamese-build.log, vietnamese-studio.log, vietnamese-tools.log. Provider vẫn là fixture rõ ràng; không tuyên bố AI thật đã được cấu hình hoặc trả lời tiếng Việt qua API ngoài.

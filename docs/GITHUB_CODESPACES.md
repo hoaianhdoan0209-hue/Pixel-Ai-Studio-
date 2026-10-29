@@ -24,3 +24,9 @@ Build runner dùng Docker riêng của Codespace và image Node đã tải. Hỗ
 Nếu báo sai Node, nhấn Ctrl+Shift+P → **Dev Containers: Rebuild Container**, chờ hoàn tất rồi mở lại cổng3001. Nếu vẫn502, kiểm tra `node -v` và `tail -n 40 web/var/codespace-server.log`; không xóa database để khắc phục startup.
 
 Bản sửa đã chạy thử startup mới và startup lặp lại ở cổng3199/data QA riêng, kiểm tra schema9, SPA, đăng ký thực và website hoạt động khi runner tắt. Đây chưa phải xác nhận đã khắc phục Codespace của người dùng; cần log/kiểm tra tại Codespace đó.
+
+## Nhập ý tưởng bằng tiếng Việt
+
+Trong terminal ở gốc repository chạy `git pull --ff-only`, sau đó `npm --prefix web run build`; tải lại trang để nhận giao diện mới. Vào AI Studio → Tạo yêu cầu game, điền tên, mô tả, tính năng và điều kiện nghiệm thu bằng tiếng Việt. Sau khi lưu, chọn dự án/bàn AI và soạn yêu cầu. Nút Điền mẫu tiếng Việt có mẫu theo vai trò; chỉ dùng khi ô yêu cầu còn trống. Chọn mô hình được API cấp quyền, lưu ngân sách rồi chủ động gửi tác vụ. Nếu chưa có bảng giá, quản trị viên cần cấu hình tại Mức sử dụng.
+
+Các thẻ Trợ lý AI/Kết nối mã nguồn GitHub/Máy dựng game là trạng thái dịch vụ. Hướng dẫn nhập khóa nằm trong mục Chưa biết nhập khóa AI ở đâu? ở cuối trang; khóa phải lưu trong Codespaces Secrets với tên AI_API_KEY hoặc ANTHROPIC_API_KEY, chọn đúng repository rồi dừng/mở lại Codespace. Không gửi khóa qua chat.

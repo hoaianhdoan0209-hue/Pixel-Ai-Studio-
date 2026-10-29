@@ -153,7 +153,7 @@ try:
         assert saved.value.ok
         expect(page.get_by_text('0 / 1000000 tokens đã ghi nhận', exact=True)).to_be_visible()
         assert api(owner_context, f'/ai/projects/{project_id}/budget')[1]['budget']['tokenLimit'] == 1000000
-        page.get_by_label('Model', exact=True).fill('browser-fixture-model')
+        page.get_by_label('Mô hình AI', exact=True).fill('browser-fixture-model')
         page.get_by_label('Yêu cầu cho tác vụ', exact=True).fill('Read the project and propose the bounded browser fixture build ' + SUFFIX)
         consent = page.get_by_role('checkbox', name=re.compile('Cho phép công cụ dự án có kiểm soát'))
         expect(consent).not_to_be_checked()
