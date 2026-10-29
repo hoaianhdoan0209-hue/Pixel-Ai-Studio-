@@ -16,3 +16,11 @@ AI cần `AI_API_KEY` hoặc `ANTHROPIC_API_KEY`, model được cấp quyền v
 Build runner dùng Docker riêng của Codespace và image Node đã tải. Hỗ trợ HTML/JS tự chứa, kiểm thử và ZIP; chưa hỗ trợ build Android/framework/desktop. Ứng dụng Android gốc được giữ nguyên; Codespace này ưu tiên website và không tự cài Android SDK.
 
 Đã kiểm tra build/script và ứng dụng trong cloud hiện tại. Chưa tạo/chạy Codespace mới trên GitHub, chưa xác nhận remote Actions hoặc website công khai; cần phân biệt các trạng thái này.
+
+## Nếu cổng3001 báo502
+
+502 chỉ xác nhận proxy chưa kết nối được website, chưa xác định nguyên nhân. Trong Terminal ở gốc repository, chạy `git pull --ff-only` rồi `bash .devcontainer/start.sh`. Script mới kiểm tra Node24, chuẩn bị dependency/frontend còn thiếu, khởi động server ở session riêng và in lỗi từ log khi không chạy được. Docker/image không có sẽ tắt runner thay vì chặn cả website.
+
+Nếu báo sai Node, nhấn Ctrl+Shift+P → **Dev Containers: Rebuild Container**, chờ hoàn tất rồi mở lại cổng3001. Nếu vẫn502, kiểm tra `node -v` và `tail -n 40 web/var/codespace-server.log`; không xóa database để khắc phục startup.
+
+Bản sửa đã chạy thử startup mới và startup lặp lại ở cổng3199/data QA riêng, kiểm tra schema9, SPA, đăng ký thực và website hoạt động khi runner tắt. Đây chưa phải xác nhận đã khắc phục Codespace của người dùng; cần log/kiểm tra tại Codespace đó.
